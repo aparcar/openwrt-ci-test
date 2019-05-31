@@ -5,8 +5,5 @@ jobs:
       - image: docker.io/aparcar/openwrt:master
         command: /sbin/init
     steps:
-      - run: ps
-      - run: sleep 1
-      - run: ps
-      - run: sleep 5
+      - run: while [ "$(cat /proc/1/cmdline)" != "/sbin/procd" ]; do sleep 2; done
       - run: ps
