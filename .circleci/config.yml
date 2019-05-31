@@ -1,11 +1,38 @@
 version: 2
 jobs:
- build:
-   machine: true
-   steps:
-     - checkout
-     - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
-     - run: curl -s "$BASE_URL/$ROOTFS_URL" -o rootfs.tar.gz
-     - run: docker build -t $DOCKER_USER/openwrt:$CIRCLE_BRANCH .
-     - run: docker push $DOCKER_USER/openwrt:$CIRCLE_BRANCH
+  build:
+    machine: true
+    environment:
+      ROOTFS_TARGET: "x86-64"
+      ROOTFS_HOST: "downloads.openwrt.org"
+    steps:
+      - checkout
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: import gpg keys
+          command: |
+            # LEDE Build System (LEDE GnuPG key for unattended build jobs)
+            curl 'https://git.openwrt.org/?p=keyring.git;a=blob_plain;f=gpg/626471F1.asc' | gpg --import \
+                && echo '54CC74307A2C6DC9CE618269CD84BCED626471F1:6:' | gpg --import-ownertrust
 
+            # LEDE Release Builder (17.01 "Reboot" Signing Key)
+            curl 'https://git.openwrt.org/?p=keyring.git;a=blob_plain;f=gpg/D52BBB6B.asc' | gpg --import \
+                && echo 'B09BE781AE8A0CD4702FDCD3833C6010D52BBB6B:6:' | gpg --import-ownertrust
+
+            # OpenWrt Release Builder (18.06 Signing Key)
+            curl 'https://git.openwrt.org/?p=keyring.git;a=blob_plain;f=gpg/17E1CE16.asc' | gpg --import \
+                && echo '6768C55E79B032D77A28DA5F0F20257417E1CE16:6:' | gpg --import-ownertrust
+      - run:
+          name: download rootfs
+          command: |
+            export ROOTFS_FILE="openwrt-$ROOTFS_TARGET-generic-rootfs.tar.gz"
+            export ROOTFS_PATH="snapshots/targets/$(echo $ROOTFS_TARGET | tr '-' '/')"
+            curl "https://$ROOTFS_HOST/$ROOTFS_PATH/sha256sums" -sS -o sha256sums
+            curl "https://$ROOTFS_HOST/$ROOTFS_PATH/sha256sums.asc" -sS -o sha256sums.asc
+            gpg --with-fingerprint --verify sha256sums.asc sha256sums
+            rsync -av "$ROOTFS_HOST::downloads/$ROOTFS_PATH/$ROOTFS_FILE" .
+            cat sha256sums | grep generic-rootfs > sha256sums_rootfs
+            sha256sum -c sha256sums_rootfs
+            mv "$ROOTFS_FILE" rootfs.tar.gz
+      - run: docker build -t $DOCKER_USER/openwrt:$ROOTFS_TARGET .
+      - run: docker push $DOCKER_USER/openwrt:$ROOTFS_TARGET
