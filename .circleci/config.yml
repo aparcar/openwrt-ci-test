@@ -50,3 +50,10 @@ jobs:
             while true; do iptables -N unitttest; iptables -A unittest -j ACCEPT -d 127.0.0.1; done &
             while [ "$(iptables -w -L OUTPUT | wc -l)" -gt 2 -a $i -lt 1000 ]; do fw3 reload; i=$((i+1)); done
             [ $i -lt 1000 ] && exit 1
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test
