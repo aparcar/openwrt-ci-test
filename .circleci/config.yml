@@ -1,11 +1,48 @@
 version: 2
 jobs:
- build:
-   machine: true
-   steps:
-     - checkout
-     - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
-     - run: curl -s "$BASE_URL/$ROOTFS_URL" -o rootfs.tar.gz
-     - run: docker build -t $DOCKER_USER/openwrt:$CIRCLE_BRANCH .
-     - run: docker push $DOCKER_USER/openwrt:$CIRCLE_BRANCH
+  build:
+    machine: true
+    environment:
+      SDK_TARGET: "x86-64"
+      SDK_HOST: "downloads.openwrt.org"
+      BRANCH: master
+    steps:
+      - checkout
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: import gpg keys
+          command: |
+            # LEDE Build System (LEDE GnuPG key for unattended build jobs)
+            curl 'https://git.openwrt.org/?p=keyring.git;a=blob_plain;f=gpg/626471F1.asc' | gpg --import \
+                && echo '54CC74307A2C6DC9CE618269CD84BCED626471F1:6:' | gpg --import-ownertrust
 
+            # LEDE Release Builder (17.01 "Reboot" Signing Key)
+            curl 'https://git.openwrt.org/?p=keyring.git;a=blob_plain;f=gpg/D52BBB6B.asc' | gpg --import \
+                && echo 'B09BE781AE8A0CD4702FDCD3833C6010D52BBB6B:6:' | gpg --import-ownertrust
+
+            # OpenWrt Release Builder (18.06 Signing Key)
+            curl 'https://git.openwrt.org/?p=keyring.git;a=blob_plain;f=gpg/17E1CE16.asc' | gpg --import \
+                && echo '6768C55E79B032D77A28DA5F0F20257417E1CE16:6:' | gpg --import-ownertrust
+      - run:
+          name: download sdk
+          command: |
+            export SDK_FILE="openwrt-sdk-$SDK_TARGET_*.Linux-x86_64.tar.xz"
+            export SDK_PATH="snapshots/targets/$(echo $SDK_TARGET | tr '-' '/')"
+            curl "https://$SDK_HOST/$SDK_PATH/sha256sums" -sS -o sha256sums
+            curl "https://$SDK_HOST/$SDK_PATH/sha256sums.asc" -sS -o sha256sums.asc
+            gpg --with-fingerprint --verify sha256sums.asc sha256sums
+            rsync -av "$SDK_HOST::downloads/$SDK_PATH/$SDK_FILE" .
+            cat sha256sums | grep openwrt-sdk > sha256sums_sdk
+            sha256sum -c sha256sums_sdk
+            tar Jxf $SDK_FILE --strip=1
+            # use GitHub instead of git.openwrt.org
+            cat > feeds.conf <<EOF
+            src-git base https://github.com/openwrt/openwrt.git;$BRANCH
+            src-git packages https://github.com/openwrt/packages.git;$BRANCH
+            src-git luci https://github.com/openwrt/luci.git;$BRANCH
+            src-git routing https://github.com/openwrt-routing/packages.git;$BRANCH
+            src-git telephony https://github.com/openwrt/telephony.git;$BRANCH
+            EOF
+            rm -rf $SDK_FILE
+      - run: docker build -t $DOCKER_USER/openwrt-sdk:$SDK_TARGET .
+      - run: docker push $DOCKER_USER/openwrt-sdk:$SDK_TARGET
