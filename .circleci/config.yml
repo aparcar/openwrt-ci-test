@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: docker.io/aparcar/openwrt-sdk
+      - image: docker.io/aparcar/openwrt-sdk:x86-64
     steps:
       - run:
           working_directory: /sdk
@@ -24,4 +24,4 @@ jobs:
             ./scripts/feeds install firewall
             make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
       - store_artifacts:
-          path: /sdk/bin/
+          path: /sdk/bin/packages/x86_64/base/firewall*
