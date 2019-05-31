@@ -7,7 +7,7 @@ jobs:
       - run:
           working_directory: /sdk
           name: update feeds
-          run: ./scripts/feeds update base
+          command: ./scripts/feeds update base
       - run:
           name: setup firewall.git
           command: |
@@ -19,8 +19,8 @@ jobs:
       - run:
           working_directory: /sdk
           name: install firewall package
-          run: ./scripts/feeds install firewall
+          command: ./scripts/feeds install firewall
       - run:
           working_directory: /sdk
           name: compile firewall package
-          run: make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
+          command: make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
