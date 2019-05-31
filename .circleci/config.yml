@@ -2,11 +2,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: docker.io/aparcar/openwrt:master
+      - image: docker.io/aparcar/openwrt:x86-64
         command: /sbin/init
     steps:
-      - run: ps
-      - run: sleep 1
-      - run: ps
-      - run: sleep 5
-      - run: ps
+      - run: sleep 30 # give procd some time to boot up
+      - run: pgrep ubusd
+      - run: pgrep odhcpd
+      - run: pgrep dropbear
+      - run: pgrep netifd
+      - run: pgrep logd
