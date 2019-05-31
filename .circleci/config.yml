@@ -37,6 +37,11 @@ jobs:
       - image: docker.io/aparcar/openwrt
         command: /sbin/init
     steps:
+      - run:
+          name: install ca requirements
+          command: |
+            opkg update
+            opkg install ca-bundle ca-certificates libustream-openssl20150806
       - restore_cache:
           keys:
             - firewall
