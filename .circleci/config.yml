@@ -1,13 +1,26 @@
 version: 2
 jobs:
   build:
-    machine: true
+    docker:
+      - image: docker.io/apracar/openwrt-sdk
     steps:
-      - checkout
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
-      - run: curl -s "$BASE_URL/$ROOTFS_URL" -o rootfs.tar.gz
-      - run: docker build -t $DOCKER_USER/openwrt:$CIRCLE_BRANCH .
-      - run: docker push $DOCKER_USER/openwrt:$CIRCLE_BRANCH
-    environment:
-      BASE_URL: "https://downloads.openwrt.org"
-      ROOTFS_URL: "snapshots/targets/x86/64/openwrt-x86-64-generic-rootfs.tar.gz"
+      - run:
+          working_directory: /sdk
+          name: update feeds
+          run: ./scripts/feeds update base
+      - run:
+          name: setup firewall.git
+          command: |
+            git clone https://git.openwrt.org/project/firewall3.git fw3
+            echo "CONFIG_DEVEL=y" > .config
+            echo "CONFIG_SRC_TREE_OVERRIDE=y" >> .config
+            make defconfig
+            ln -s ./fw3/.git/ /sdk/feeds/base/package/network/config/firewall/git-src
+      - run:
+          working_directory: /sdk
+          name: install firewall package
+          run: ./scripts/feeds install firewall
+      - run:
+          working_directory: /sdk
+          name: compile firewall package
+          run: make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
