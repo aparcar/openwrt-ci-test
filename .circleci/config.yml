@@ -7,20 +7,19 @@ jobs:
       - run:
           working_directory: /sdk
           name: update feeds
-          command: ./scripts/feeds update base
+          command: |
+            ./scripts/feeds update base
+            echo "CONFIG_DEVEL=y" > .config
+            echo "CONFIG_SRC_TREE_OVERRIDE=y" >> .config
+            make defconfig
       - run:
           name: setup firewall.git
           command: |
             git clone https://git.openwrt.org/project/firewall3.git fw3
-            echo "CONFIG_DEVEL=y" > .config
-            echo "CONFIG_SRC_TREE_OVERRIDE=y" >> .config
-            make defconfig
             ln -s ./fw3/.git/ /sdk/feeds/base/package/network/config/firewall/git-src
       - run:
           working_directory: /sdk
-          name: install firewall package
-          command: ./scripts/feeds install firewall
-      - run:
-          working_directory: /sdk
-          name: compile firewall package
-          command: make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
+          name: install & compile firewall package
+          command: |
+            ./scripts/feeds install firewall
+            make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
