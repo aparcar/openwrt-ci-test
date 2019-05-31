@@ -6,3 +6,7 @@ jobs:
         command: /sbin/init
     steps:
       - run: ps
+      - run: sleep 1
+      - run: ps
+      - run: sleep 5
+      - run: ps
