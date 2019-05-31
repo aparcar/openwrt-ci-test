@@ -1,13 +1,7 @@
 version: 2
 jobs:
   build:
-    machine: true
+    docker:
+      - image: docker.io/aparcar/openwrt:master
     steps:
-      - checkout
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
-      - run: curl -s "$BASE_URL/$ROOTFS_URL" -o rootfs.tar.gz
-      - run: docker build -t $DOCKER_USER/openwrt:$CIRCLE_BRANCH .
-      - run: docker push $DOCKER_USER/openwrt:$CIRCLE_BRANCH
-    environment:
-      BASE_URL: "https://downloads.openwrt.org"
-      ROOTFS_URL: "snapshots/targets/x86/64/openwrt-x86-64-generic-rootfs.tar.gz"
+      - run: ps
