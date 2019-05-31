@@ -19,7 +19,7 @@ jobs:
           name: setup firewall.git
           command: |
             git clone https://git.openwrt.org/project/firewall3.git fw3
-            ln -s ./fw3/.git/ /sdk/feeds/base/package/network/config/firewall/git-src
+            ln -sf ./fw3/.git/ /sdk/feeds/base/package/network/config/firewall/git-src
       - run:
           working_directory: /sdk
           name: install & compile firewall package
