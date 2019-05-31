@@ -37,6 +37,9 @@ jobs:
       - image: docker.io/aparcar/openwrt
         command: /sbin/init
     steps:
+      - restore_cache:
+          keys:
+            - firewall
       - run: sleep 10
       - run:
           name: install firewall package
@@ -57,3 +60,5 @@ workflows:
     jobs:
       - build
       - test
+          requires:
+            - build
