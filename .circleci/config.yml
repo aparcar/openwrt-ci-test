@@ -30,7 +30,7 @@ jobs:
           path: /sdk/bin/packages/x86_64/base/firewall*
       - save_cache:
           key: firewall
-          path:
+          paths:
             - "/sdk"
   test:
     docker:
