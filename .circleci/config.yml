@@ -3,5 +3,6 @@ jobs:
   build:
     docker:
       - image: docker.io/aparcar/openwrt:master
+      - command: /sbin/init
     steps:
       - run: ps
