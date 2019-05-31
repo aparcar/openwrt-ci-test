@@ -4,6 +4,9 @@ jobs:
     docker:
       - image: docker.io/aparcar/openwrt-sdk
     steps:
+      - restore_cache:
+          keys:
+            - firewall
       - run:
           working_directory: /sdk
           name: update feeds
@@ -25,3 +28,25 @@ jobs:
             make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
       - store_artifacts:
           path: /sdk/bin/packages/x86_64/base/firewall*
+      - save_cache:
+          key: firewall
+          path:
+            - "/sdk"
+  test:
+    docker:
+      - image: docker.io/aparcar/openwrt
+        command: /sbin/init
+    steps:
+      - run: sleep 10
+      - run:
+          name: install firewall package
+          command: |
+            opkg update
+            opkg install --force-reinstall /sdk/bin/packages/x86_64/base/firewall*
+      - run:
+          name: try to break firewall
+          command: |
+            i=0
+            while true; do iptables -N unitttest; iptables -A unittest -j ACCEPT -d 127.0.0.1; done &
+            while [ "$(iptables -w -L OUTPUT | wc -l)" -gt 2 -a $i -lt 1000 ]; do fw3 reload; i=$((i+1)); done
+            [ $i -lt 1000 ] && exit 1
