@@ -27,7 +27,7 @@ jobs:
             ./scripts/feeds install firewall
             make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
       - store_artifacts:
-          path: /sdk/bin/packages/x86_64/base/firewall*
+          path: /sdk/bin/packages/x86_64/base/
       - save_cache:
           key: firewall
           paths:
