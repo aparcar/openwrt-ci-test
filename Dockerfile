@@ -1,15 +1,10 @@
-FROM scratch
+FROM debian:latest
 
-MAINTAINER Paul Spooren <mail@aparcar.org>
+RUN apt-get update -qq &&\
+    apt-get install -y build-essential libncurses5-dev gawk git subversion \
+        libssl-dev gettext zlib1g-dev swig unzip python2.7 wget file &&\
+        apt-get -y autoremove && apt-get clean
 
-ADD rootfs.tar.gz /
+COPY . /imagebuilder/
 
-ADD root/ /
-
-RUN echo 'console::askfirst:/usr/libexec/login.sh' >> /etc/inittab
-
-EXPOSE 80 443 22
-
-USER root
-
-CMD ["/sbin/init"]
+WORKDIR /imagebuilder
