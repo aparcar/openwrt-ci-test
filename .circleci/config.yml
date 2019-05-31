@@ -4,9 +4,6 @@ jobs:
     docker:
       - image: docker.io/aparcar/openwrt-sdk
     steps:
-      - restore_cache:
-          keys:
-            - firewall
       - run:
           working_directory: /sdk
           name: update feeds
@@ -28,29 +25,29 @@ jobs:
             make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
       - store_artifacts:
           path: /sdk/bin/packages/x86_64/base/
-      - save_cache:
-          key: firewall
+      - persist_to_workspace:
+          root: /sdk/bin/packages/x86_64/
           paths:
-            - "/sdk"
+            - base
+
   test:
     docker:
       - image: docker.io/aparcar/openwrt
         command: /sbin/init
     steps:
+      - attach_workspace:
+          at: /tmp/base/
       - run:
           name: install ca requirements
           command: |
             opkg update
             opkg install ca-bundle ca-certificates libustream-openssl20150806
-      - restore_cache:
-          keys:
-            - firewall
       - run: sleep 10
       - run:
           name: install firewall package
           command: |
             opkg update
-            opkg install --force-reinstall /sdk/bin/packages/x86_64/base/firewall*
+            opkg install --force-reinstall /tmp/base/firewall*
       - run:
           name: try to break firewall
           command: |
