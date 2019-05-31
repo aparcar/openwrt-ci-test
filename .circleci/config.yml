@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: docker.io/apracar/openwrt-sdk
+      - image: docker.io/aparcar/openwrt-sdk
     steps:
       - run:
           working_directory: /sdk
