@@ -2,26 +2,15 @@ version: 2
 jobs:
   build:
     docker:
-      - image: docker.io/aparcar/openwrt-sdk:x86-64
+      - image: docker.io/aparcar/openwrt-imagebuilder:x86-64
     steps:
       - run:
-          working_directory: /sdk
-          name: update feeds
+          working_directory: /imagebuilder
+          name: create image
           command: |
-            ./scripts/feeds update base
-            echo "CONFIG_DEVEL=y" > .config
-            echo "CONFIG_SRC_TREE_OVERRIDE=y" >> .config
-            make defconfig
+            make image
       - run:
-          name: setup firewall.git
-          command: |
-            git clone https://git.openwrt.org/project/firewall3.git fw3
-            ln -s ./fw3/.git/ /sdk/feeds/base/package/network/config/firewall/git-src
-      - run:
-          working_directory: /sdk
-          name: install & compile firewall package
-          command: |
-            ./scripts/feeds install firewall
-            make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
+          name: check successful image creation
+          command: ls /imagebuilder/bin/targets/x86/64/openwrt-x86-64-generic-rootfs.tar.gz
       - store_artifacts:
-          path: /sdk/bin/packages/x86_64/base/firewall*
+          path: /imagebuilder/bin/targets/x86/64/
