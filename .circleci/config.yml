@@ -23,5 +23,8 @@ jobs:
           command: |
             ./scripts/feeds install firewall
             make package/firewall/{clean,compile} -j$(nproc) || make package/firewall/compile V=s
+      - run:
+          name: check successful firewall build
+          command: ls /sdk/bin/packages/x86_64/base/firewall*
       - store_artifacts:
           path: /sdk/bin/packages/x86_64/base/firewall*
